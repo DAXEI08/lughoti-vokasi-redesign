@@ -6,12 +6,12 @@ import About from './About'
 import BrandLogo from './BrandLogo'
 import { Ic, ICON, Khatam } from './ui'
 import { renderStory, STYLES } from './lib/share'
-import { AR_FONTS, DEFAULTS, ID_FONTS, MAJORS, dailyWord, entryNo, entrySeq, majorOf, norm, parseDataset, search, usePersisted, type Major, type Prefs, type Similar, type Word } from './lib/core'
+import { AR_FONTS, DEFAULTS, ID_FONTS, dailyWord, entryNo, entrySeq, majorOf, norm, parseDataset, search, usePersisted, type Major, type Prefs, type Similar, type Word } from './lib/core'
 
 type Data = { words: Word[]; similar: Similar[]; skipped: number }
 type Scope = 'all' | 'fav' | 'recent'
 
-/* Prefs saved before `rev` existed adopt the serif reading font and the darker gold accent once; everything else is kept. */
+/* Prefs saved under an older `rev` adopt the current reading font and the darker gold accent once; everything else is kept. */
 const migrate = (s: Prefs): Prefs =>
   s.rev === DEFAULTS.rev ? { ...DEFAULTS, ...s }
     : { ...DEFAULTS, ...s, rev: DEFAULTS.rev, idFont: DEFAULTS.idFont, accent: s.accent === '#A07A12' ? '#8A6A0E' : s.accent }
@@ -41,6 +41,12 @@ function Dialog({ open, onClose, title, children }: { open: boolean; onClose: ()
   )
 }
 
+function useMedia(query: string) {
+  const [m, setM] = useState(() => matchMedia(query).matches)
+  useEffect(() => { const l = matchMedia(query); const f = () => setM(l.matches); f(); l.addEventListener('change', f); return () => l.removeEventListener('change', f) }, [query])
+  return m
+}
+
 export default function App() {
   const [prefs, setPrefs] = usePersisted('prefs', DEFAULTS)
   const p = migrate(prefs)
@@ -66,6 +72,7 @@ export default function App() {
   const [img, setImg] = useState<{ url: string; blob: Blob } | null>(null)
   const [note, setNote] = useState('')
   const [copied, setCopied] = useState('')
+  const wide = useMedia('(min-width:1024px)')
   const [sysDark, setSysDark] = useState(() => matchMedia('(prefers-color-scheme: dark)').matches)
 
   useEffect(() => {
@@ -112,8 +119,6 @@ export default function App() {
   const daily = useMemo(() => (data && activeWords.length ? dailyWord(activeWords) : null), [data, activeWords])
   const similar = sel && data ? data.similar.filter(s => (s.a1 === sel.ar || s.a2 === sel.ar) && (s.scope === 'all' || s.scope === sel.major || !s.scope)) : []
   const counts = useMemo(() => { if (!data) return null; const m = new Map<Major, number>(); data.words.forEach(w => m.set(w.major, (m.get(w.major) ?? 0) + 1)); return m }, [data])
-  // cover: today's word from each major, so the cover previews real entries
-  const samples = useMemo(() => (data ? MAJORS.filter(m => m.key !== 'Umum').map(m => data.words.filter(w => w.major === m.key && w.mean.length <= 20 && w.ar.length <= 22)).filter(l => l.length).map(dailyWord) : []), [data])
 
   useEffect(() => setLim(60), [dq, major, scope, topic])
   useEffect(() => setTopic('all'), [major])
@@ -140,12 +145,18 @@ export default function App() {
   const openAbout = (from: 'cover' | 'app') => { setAboutFrom(from); setAboutSeen(true); setStage('about') }
 
   if (stage === 'about') return <About counts={counts} onBack={() => setStage(aboutFrom)} />
-  if (stage === 'cover') return <Cover samples={samples} onStart={() => setStage(mine == null || mine === 'all' ? 'pick' : 'app')} onAbout={() => openAbout('cover')} />
+  if (stage === 'cover') return <Cover onStart={() => setStage(mine == null || mine === 'all' ? 'pick' : 'app')} onAbout={() => openAbout('cover')} />
   if (stage === 'pick') return <Onboard current={mine === 'all' ? null : mine} words={data?.words} onPick={choose} onClose={mine != null && mine !== 'all' ? () => setStage('app') : undefined} />
 
   const mj = majorOf(major)
   const selFav = !!sel && favs.includes(sel.id)
   const scopes: [Scope, string, number][] = [['all', 'Semua', activeWords.length], ['fav', 'Favorit', activeFavIds.length], ['recent', 'Terakhir', activeRecentIds.length]]
+  const dailyEl = daily && !q && scope === 'all' && topic === 'all' ? (
+    <button className="daily" onClick={() => open(daily)}>
+      <span className="daily__meta"><span>Kata hari ini</span><span className="daily__go">{entryNo(daily)}<Ic d={ICON.chevron} /></span></span>
+      <span className="daily__mean">{daily.mean}{daily.tr && <small className="daily__tr" dir="ltr">{daily.tr}</small>}</span>
+      <span className="daily__ar ar" lang="ar" dir="rtl">{daily.ar}</span>
+    </button>) : null
   return (
     <div className="page screen">
       <a className="skip" href="#hasil">Lewati ke daftar kata</a>
@@ -155,7 +166,6 @@ export default function App() {
           <div className="hd__tools">
             <button className="icon-btn" onClick={rnd} aria-label="Kata acak" title="Kata acak"><Ic d={ICON.shuffle} /><span className="icon-btn__lbl">Acak</span></button>
             <button className="icon-btn" onClick={() => setCfg(true)} aria-label="Pengaturan tampilan" title="Pengaturan tampilan"><Ic d={ICON.sliders} /><span className="icon-btn__lbl">Tampilan</span></button>
-            <button className="icon-btn" onClick={() => openAbout('app')} aria-label="Tentang kamus ini" title="Tentang kamus ini"><Ic d={ICON.info} /><span className="icon-btn__lbl">Tentang</span></button>
           </div>
         </header>
 
@@ -163,7 +173,7 @@ export default function App() {
           <div className="rail">
             {/* 1 · jurusan aktif */}
             <section className="vol" aria-labelledby="vol-name">
-              <div className="vol__bar"><span className="stamp">{mj.code}</span><span>Jurusan aktif</span><button className="link" onClick={() => setStage('pick')}>Ganti jurusan</button></div>
+              <div className="vol__bar"><span className="stamp">{mj.code}</span><button className="link" onClick={() => setStage('pick')}>Ganti jurusan</button></div>
               <div className="vol__title"><h1 className="vol__name" id="vol-name">{mj.full}</h1><span className="vol__ar ar" lang="ar" dir="rtl">{mj.ar}</span></div>
             </section>
 
@@ -182,16 +192,7 @@ export default function App() {
             </div>
 
             {/* 3 · kata hari ini */}
-            {daily && !q && scope === 'all' && topic === 'all' && (
-              <button className="daily" onClick={() => open(daily)}>
-                <span className="daily__meta"><span>Kata hari ini</span><span>{entryNo(daily)}</span></span>
-                <span className="daily__mean">{daily.mean}{daily.tr && <small className="daily__tr" dir="ltr">{daily.tr}</small>}</span>
-                <span className="daily__ar ar" lang="ar" dir="rtl">{daily.ar}</span>
-              </button>)}
-            {!aboutSeen && <div className="teaser" role="note">
-              <button className="teaser__open" onClick={() => openAbout('app')}><b>Kenapa kamus ini dibuat?</b>Bahasa Arab yang nyambung dengan jurusanmu. Baca ceritanya.</button>
-              <button className="icon-btn" onClick={() => setAboutSeen(true)} aria-label="Tutup pengantar"><Ic d={ICON.close} /></button></div>}
-
+            {!wide && dailyEl}
             {/* 5 · filter kategori (sekunder) */}
             {topics.length > 0 && <div className="topics" role="group" aria-label="Kategori kata">
               <button aria-pressed={topic === 'all'} onClick={() => setTopic('all')}>Semua kategori</button>
@@ -201,6 +202,11 @@ export default function App() {
 
           {/* 4 · daftar kosakata */}
           <div className="results" id="hasil" tabIndex={-1}>
+            {wide && dailyEl}
+            {!aboutSeen && <div className="teaser" role="note">
+              <button className="teaser__open" onClick={() => openAbout('app')}><b>Kenapa kamus ini dibuat?</b>Bahasa Arab yang nyambung dengan jurusanmu. Baca ceritanya.</button>
+              <button className="icon-btn" onClick={() => setAboutSeen(true)} aria-label="Tutup pengantar"><Ic d={ICON.close} /></button></div>}
+
             {err && <div className="state state--error" role="alert"><h2>Kamus gagal dimuat</h2><p>{err}</p><button className="btn" onClick={() => setTries(t => t + 1)}>Coba lagi</button></div>}
             {!data && !err && <><p className="state state--load" role="status"><span className="ld" aria-hidden />Memuat kamus…</p><ul className="skel" aria-hidden>{Array.from({ length: 6 }, (_, i) => <li key={i} />)}</ul></>}
             {data && <>

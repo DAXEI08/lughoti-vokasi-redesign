@@ -4,7 +4,7 @@
 .set-preview__ar{order:-1;font-size:var(--ar-size);line-height:1.55;white-space:nowrap;overflow:hidden;text-align:start}
 .set-preview__text{display:grid;gap:2px;min-width:0}
 .set-preview__text .mean{font-size:var(--id-size);font-weight:600}
-.set-preview__text .tr{font-size:var(--sub-size);font-style:italic;color:var(--ink-3)}
+.set-preview__text .tr{font:italic 400 var(--sub-size)/1.35 var(--serif);color:var(--ink-3)}
 @media (max-height:720px){.set-preview{position:static}}
 
 .set-group{display:grid;margin:0;min-width:0;padding:0;border:0}

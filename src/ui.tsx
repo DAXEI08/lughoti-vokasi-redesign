@@ -11,6 +11,7 @@ export const ICON = {
   share: 'M12 15V3m0 0L8 7m4-4 4 4M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7',
   copy: 'M9 9h11v11H9zM5 15V4h11',
   check: 'M5 12.5 9.5 17 19 7.5',
+  chevron: 'm9 6 6 6-6 6',
 } as const
 
 export const Ic = ({ d, fill }: { d: string; fill?: boolean }) => (
