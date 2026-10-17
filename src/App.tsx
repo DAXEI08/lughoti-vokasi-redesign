@@ -4,7 +4,7 @@ import Onboard from './Onboard'
 import Settings from './Settings'
 import About from './About'
 import BrandLogo from './BrandLogo'
-import { Ic, ICON, Khatam } from './ui'
+import { BackToTop, Ic, ICON, Khatam } from './ui'
 import { renderStory, STYLES } from './lib/share'
 import { AR_FONTS, DEFAULTS, ID_FONTS, dailyWord, entryNo, entrySeq, majorOf, norm, parseDataset, search, usePersisted, type Major, type Prefs, type Similar, type Word } from './lib/core'
 
@@ -243,6 +243,7 @@ export default function App() {
         </footer>
       </div>
 
+      <BackToTop focusSel=".brand" />
       <Dialog open={!!sel} onClose={() => setSel(null)} title={sel ? `Entri ${entryNo(sel)}` : 'Detail kata'}>
         {sel && <article className="detail">
           <div className="detail__ar ar" lang="ar" dir="rtl">{sel.ar}</div>

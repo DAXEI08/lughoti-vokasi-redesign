@@ -1,3 +1,5 @@
+import { useEffect, useState } from 'react'
+
 /* Shared UI atoms. One place for icons and the single ornamental motif. */
 
 export const ICON = {
@@ -12,6 +14,7 @@ export const ICON = {
   copy: 'M9 9h11v11H9zM5 15V4h11',
   check: 'M5 12.5 9.5 17 19 7.5',
   chevron: 'm9 6 6 6-6 6',
+  up: 'M12 19V5m-6 6 6-6 6 6',
 } as const
 
 export const Ic = ({ d, fill }: { d: string; fill?: boolean }) => (
@@ -25,3 +28,25 @@ export const Khatam = ({ size = 18 }: { size?: number }) => (
     <rect x="5" y="5" width="14" height="14" /><rect x="5" y="5" width="14" height="14" transform="rotate(45 12 12)" />
   </svg>
 )
+
+/** Jump-to-top: appears only after ~1.5 screens of scrolling, jumps instantly (no smooth scroll),
+ *  then hands focus to `focusSel` so keyboard users are not left on a button that just disappeared. */
+export function BackToTop({ focusSel }: { focusSel?: string }) {
+  const [show, setShow] = useState(false)
+  useEffect(() => {
+    let raf = 0
+    const check = () => { raf = 0; setShow(window.scrollY > window.innerHeight * 1.5) }
+    const on = () => { if (!raf) raf = requestAnimationFrame(check) }
+    check(); window.addEventListener('scroll', on, { passive: true })
+    return () => { window.removeEventListener('scroll', on); if (raf) cancelAnimationFrame(raf) }
+  }, [])
+  const go = () => {
+    window.scrollTo(0, 0)
+    ;(focusSel ? document.querySelector<HTMLElement>(focusSel) : null)?.focus({ preventScroll: true })
+  }
+  return (
+    <button type="button" className="totop" data-show={show} onClick={go} aria-label="Kembali ke atas" title="Kembali ke atas" tabIndex={show ? 0 : -1} aria-hidden={!show}>
+      <Ic d={ICON.up} />
+    </button>
+  )
+}

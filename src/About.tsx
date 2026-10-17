@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { MAJORS, type Major } from './lib/core'
-import { Ic, ICON, Khatam } from './ui'
+import { BackToTop, Ic, ICON, Khatam } from './ui'
 import './about.css'
 
 interface Props {
@@ -96,6 +96,7 @@ export default function About({ counts, onBack }: Props) {
           <button type="button" className="btn btn--primary btn--lg" onClick={onBack}>Mulai belajar</button>
         </footer>
       </div>
+      <BackToTop focusSel=".about__bar .btn" />
     </main>
   )
 }

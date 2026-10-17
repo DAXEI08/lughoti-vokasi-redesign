@@ -242,3 +242,9 @@ dialog::backdrop{background:var(--scrim);animation:fade var(--dur-2) var(--ease)
 .story{display:grid;place-items:center;aspect-ratio:9/16;max-height:52dvh;margin-inline:auto;border:1px solid var(--rule);border-radius:var(--r-xs);overflow:hidden;background:var(--paper-2)}
 .story img{height:100%;width:auto;display:block}
 .acts--stack{grid-template-columns:1fr}
+
+/* jump-to-top: one quiet square control, bottom right, hidden (and unfocusable) until needed */
+.totop{position:fixed;z-index:7;right:max(var(--gx),env(safe-area-inset-right));bottom:max(var(--s4),env(safe-area-inset-bottom));display:grid;place-items:center;width:2.75rem;height:2.75rem;border:1px solid var(--line-ctl);border-radius:var(--r-ctl);background:var(--paper);color:var(--ink);opacity:0;visibility:hidden;transform:translateY(8px);transition:opacity var(--dur-1) var(--ease),transform var(--dur-1) var(--ease),visibility 0s linear var(--dur-1),background-color var(--dur-1) var(--ease)}
+.totop[data-show=true]{opacity:1;visibility:visible;transform:none;transition-delay:0s}
+.totop:hover{background:var(--paper-2)}
+.totop:active{background:var(--wash-2)}
