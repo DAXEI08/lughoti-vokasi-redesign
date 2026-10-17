@@ -108,5 +108,8 @@ export const ID_FONTS: Record<string, string> = {
   Sistem: 'system-ui,-apple-system,"Segoe UI",Roboto,sans-serif',
 }
 export const DEFAULTS = { theme: 'system' as 'system' | 'light' | 'dark', accent: '#0B6B52', arFont: 'Amiri', idFont: 'Plus Jakarta Sans', rev: 3,
-  arSize: 2.4, idSize: 1.05, subSize: 0.85, lh: 1.6, width: 1100, compact: false, calm: false }
+  arSize: 2.4, idSize: 1.05, subSize: 0.85, lh: 1.6, width: 1100, compact: false, calm: false, harakat: true, translit: true }
 export type Prefs = typeof DEFAULTS
+
+/** Display-only: removes Arabic vowel marks and shadda. Stored data and search normalisation are untouched. */
+export const stripHarakat = (t: string) => t.replace(/[\u064B-\u065F\u0670]/g, '')

@@ -6,7 +6,7 @@ import About from './About'
 import BrandLogo from './BrandLogo'
 import { BackToTop, Ic, ICON, Khatam } from './ui'
 import { renderStory, STYLES } from './lib/share'
-import { AR_FONTS, DEFAULTS, ID_FONTS, dailyWord, entryNo, entrySeq, majorOf, norm, parseDataset, search, usePersisted, type Major, type Prefs, type Similar, type Word } from './lib/core'
+import { AR_FONTS, DEFAULTS, ID_FONTS, dailyWord, entryNo, entrySeq, majorOf, norm, parseDataset, stripHarakat, search, usePersisted, type Major, type Prefs, type Similar, type Word } from './lib/core'
 
 type Data = { words: Word[]; similar: Similar[]; skipped: number }
 type Scope = 'all' | 'fav' | 'recent'
@@ -82,11 +82,11 @@ export default function App() {
   useEffect(() => {
     const r = document.documentElement; const s = r.style
     r.dataset.theme = p.theme === 'system' ? (sysDark ? 'dark' : 'light') : p.theme
-    r.dataset.calm = String(p.calm); r.dataset.compact = String(p.compact)
+    r.dataset.calm = String(p.calm); r.dataset.compact = String(p.compact); r.dataset.translit = String(p.translit)
     s.setProperty('--acc', p.accent); s.setProperty('--ar-size', p.arSize + 'rem'); s.setProperty('--id-size', p.idSize + 'rem')
     s.setProperty('--sub-size', p.subSize + 'rem'); s.setProperty('--lh', String(p.lh)); s.setProperty('--maxw', p.width + 'px')
     s.setProperty('--ar-font', AR_FONTS[p.arFont] ?? AR_FONTS.Amiri); s.setProperty('--id-font', ID_FONTS[p.idFont] ?? ID_FONTS[DEFAULTS.idFont])
-  }, [p.theme, p.accent, p.arSize, p.idSize, p.subSize, p.lh, p.width, p.arFont, p.idFont, p.calm, p.compact, sysDark])
+  }, [p.theme, p.accent, p.arSize, p.idSize, p.subSize, p.lh, p.width, p.arFont, p.idFont, p.calm, p.compact, p.translit, sysDark])
   useEffect(() => {
     let live = true; setErr('')
     fetch(`${import.meta.env.BASE_URL}words.json`).then(r => { if (!r.ok) throw new Error(`Gagal memuat words.json (HTTP ${r.status}).`); return r.json() })
@@ -151,11 +151,12 @@ export default function App() {
   const mj = majorOf(major)
   const selFav = !!sel && favs.includes(sel.id)
   const scopes: [Scope, string, number][] = [['all', 'Semua', activeWords.length], ['fav', 'Favorit', activeFavIds.length], ['recent', 'Terakhir', activeRecentIds.length]]
+  const A = (t: string) => (p.harakat ? t : stripHarakat(t))
   const dailyEl = daily && !q && scope === 'all' && topic === 'all' ? (
     <button className="daily" onClick={() => open(daily)}>
       <span className="daily__meta"><span>Kata hari ini</span><span className="daily__go">{entryNo(daily)}<Ic d={ICON.chevron} /></span></span>
       <span className="daily__mean">{daily.mean}{daily.tr && <small className="daily__tr" dir="ltr">{daily.tr}</small>}</span>
-      <span className="daily__ar ar" lang="ar" dir="rtl">{daily.ar}</span>
+      <span className="daily__ar ar" lang="ar" dir="rtl">{A(daily.ar)}</span>
     </button>) : null
   return (
     <div className="page screen">
@@ -219,7 +220,7 @@ export default function App() {
                       <button className="entry__open" onClick={() => open(w)}>
                         <span className="entry__no" aria-hidden>{entrySeq(w)}</span>
                         <span className="entry__tx"><b><Mark t={w.mean} q={dq} /></b>{w.tr && <small dir="ltr"><Mark t={w.tr} q={dq} /></small>}</span>
-                        <span className="entry__ar ar" lang="ar" dir="rtl"><Mark t={w.ar} q={dq} /></span>
+                        <span className="entry__ar ar" lang="ar" dir="rtl"><Mark t={A(w.ar)} q={dq} /></span>
                       </button>
                       <button className="entry__fav" aria-pressed={fav} aria-label={`Favorit: ${w.mean}`} onClick={() => toggleFav(w.id)}><Ic d={ICON.star} fill={fav} /></button>
                     </li>)
@@ -246,13 +247,13 @@ export default function App() {
       <BackToTop focusSel=".brand" />
       <Dialog open={!!sel} onClose={() => setSel(null)} title={sel ? `Entri ${entryNo(sel)}` : 'Detail kata'}>
         {sel && <article className="detail">
-          <div className="detail__ar ar" lang="ar" dir="rtl">{sel.ar}</div>
+          <div className="detail__ar ar" lang="ar" dir="rtl">{A(sel.ar)}</div>
           <div><h3 className="detail__mean">{sel.mean}</h3>{sel.tr && <p className="detail__tr" dir="ltr">{sel.tr}</p>}</div>
           <dl className="spec">{sel.topic && <><dt>Bidang</dt><dd>{sel.topic}</dd></>}<dt>Jurusan</dt><dd>{majorOf(sel.major).full}</dd></dl>
-          {sel.exAr ? <section className="sec"><h3>Contoh kalimat</h3><p className="sec__ar ar" lang="ar" dir="rtl">{sel.exAr}</p><p className="sec__id">{sel.exId}</p></section>
+          {sel.exAr ? <section className="sec"><h3>Contoh kalimat</h3><p className="sec__ar ar" lang="ar" dir="rtl">{A(sel.exAr)}</p><p className="sec__id">{sel.exId}</p></section>
             : <p className="sub">Contoh kalimat belum tersedia untuk kata ini.</p>}
           {similar.map((s, i) => <section key={i} className="sec note"><h3>Hati-hati, mirip</h3>
-            <p><span lang="ar" dir="rtl">{s.a1}</span> ({s.m1}) ≠ <span lang="ar" dir="rtl">{s.a2}</span> ({s.m2})</p><p>{s.tip}</p></section>)}
+            <p><span lang="ar" dir="rtl">{A(s.a1)}</span> ({s.m1}) ≠ <span lang="ar" dir="rtl">{A(s.a2)}</span> ({s.m2})</p><p>{s.tip}</p></section>)}
           <div className="acts">
             <button className="btn btn--primary btn--lg" onClick={() => setShareW(sel)}><Ic d={ICON.share} />Bagikan ke Story</button>
             <button className="btn" aria-pressed={selFav} onClick={() => toggleFav(sel.id)}><Ic d={ICON.star} fill={selFav} />Simpan</button>
@@ -269,7 +270,7 @@ export default function App() {
           <p className="sub" role="status">{note || 'Gambar 1080×1920, siap untuk Instagram, WhatsApp, atau TikTok Story.'}</p>
         </div>
       </Dialog>
-      <Dialog open={cfg} onClose={() => setCfg(false)} title="Tampilan"><Settings p={p} set={setPrefs} /></Dialog>
+      <Dialog open={cfg} onClose={() => setCfg(false)} title="Tampilan"><Settings p={p} set={setPrefs} onDone={() => setCfg(false)} /></Dialog>
     </div>
   )
 }
